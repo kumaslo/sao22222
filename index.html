@@ -387,7 +387,7 @@
         <header class="app-header">
             <h1>SAO2コンパス</h1>
             <div class="header-info">
-                <span class="version-badge">Ver.1.7.0</span>
+                <span class="version-badge">Ver.1.8.0</span>
                 <span id="access-counter" class="counter-badge">👁️ --- views</span>
             </div>
         </header>
@@ -673,7 +673,7 @@
 
     <script>
         /* ==========================================
-           SAO2コンパス アプリ用データおよびスクリプト (Ver.1.7.0)
+           SAO2コンパス アプリ用データおよびスクリプト (Ver.1.8.0)
            ========================================== */
         const APP_DATA = {
             machineName: "L ソードアート・オンライン2",
@@ -1629,6 +1629,11 @@
 
         function highlightClosestSpecs(userCzDenom, userAtDenom) {
             const rows = document.querySelectorAll('#spec-comparison-table tbody tr');
+            const games = parseInt(document.getElementById('input-games').value) || 0;
+            const cz = parseInt(document.getElementById('input-cz').value) || 0;
+            const at = parseInt(document.getElementById('input-at').value) || 0;
+            const hasData = (games > 0 || cz > 0 || at > 0);
+
             if (rows.length > 0) {
                 rows.forEach(row => {
                     const czTd = row.querySelector('[data-type="cz"]');
@@ -1637,60 +1642,38 @@
                     if (atTd) atTd.classList.remove('highlight-spec');
                 });
 
-                let closestCzRow = null;
-                let minCzDiff = Infinity;
-                let closestAtRow = null;
-                let minAtDiff = Infinity;
+                if (hasData) {
+                    let closestCzRow = null;
+                    let minCzDiff = Infinity;
+                    let closestAtRow = null;
+                    let minAtDiff = Infinity;
 
-                rows.forEach(row => {
-                    const czTd = row.querySelector('[data-type="cz"]');
-                    const atTd = row.querySelector('[data-type="at"]');
-                    const specCz = parseFloat(czTd.getAttribute('data-val'));
-                    const specAt = parseFloat(atTd.getAttribute('data-val'));
+                    rows.forEach(row => {
+                        const czTd = row.querySelector('[data-type="cz"]');
+                        const atTd = row.querySelector('[data-type="at"]');
+                        const specCz = parseFloat(czTd.getAttribute('data-val'));
+                        const specAt = parseFloat(atTd.getAttribute('data-val'));
 
-                    if (!isNaN(userCzDenom)) {
-                        const diffCz = Math.abs(specCz - userCzDenom);
-                        if (diffCz < minCzDiff) {
-                            minCzDiff = diffCz;
-                            closestCzRow = czTd;
+                        if (!isNaN(userCzDenom) && userCzDenom > 0) {
+                            const diffCz = Math.abs(specCz - userCzDenom);
+                            if (diffCz < minCzDiff) {
+                                minCzDiff = diffCz;
+                                closestCzRow = czTd;
+                            }
                         }
-                    }
-                    if (!isNaN(userAtDenom)) {
-                        const diffAt = Math.abs(specAt - userAtDenom);
-                        if (diffAt < minAtDiff) {
-                            minAtDiff = diffAt;
-                            closestAtRow = atTd;
-                        }
-                    }
-                });
-
-                if (closestCzRow) closestCzRow.classList.add('highlight-spec');
-                if (closestAtRow) closestAtRow.classList.add('highlight-spec');
-            }
-
-            const analysisTables = document.querySelectorAll('.analysis-table');
-            analysisTables.forEach(table => {
-                const trs = table.querySelectorAll('tbody tr');
-                trs.forEach(tr => {
-                    const tds = tr.querySelectorAll('[data-col]');
-                    if (tds.length === 0) return;
-                    
-                    tds.forEach(td => td.classList.remove('highlight-spec'));
-
-                    let maxVal = -1;
-                    let targetTd = null;
-                    tds.forEach(td => {
-                        const val = parseFloat(td.getAttribute('data-val'));
-                        if (!isNaN(val) && val > maxVal && val > 0.001) {
-                            maxVal = val;
-                            targetTd = td;
+                        if (!isNaN(userAtDenom) && userAtDenom > 0) {
+                            const diffAt = Math.abs(specAt - userAtDenom);
+                            if (diffAt < minAtDiff) {
+                                minAtDiff = diffAt;
+                                closestAtRow = atTd;
+                            }
                         }
                     });
-                    if (targetTd) {
-                        targetTd.classList.add('highlight-spec');
-                    }
-                });
-            });
+
+                    if (closestCzRow) closestCzRow.classList.add('highlight-spec');
+                    if (closestAtRow) closestAtRow.classList.add('highlight-spec');
+                }
+            }
         }
     </script>
 </body>
