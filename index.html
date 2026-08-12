@@ -379,6 +379,33 @@
             text-align: right;
             font-weight: bold;
         }
+        /* チェックボックス群のスタイル */
+        .inference-filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: #121212;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            margin-bottom: 10px;
+        }
+        .inference-filter-container label {
+            font-size: 0.78rem;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 2px 4px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            border: 1px solid #2a2a2a;
+        }
+        .inference-filter-container input[type="checkbox"] {
+            accent-color: #00bfff;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -387,7 +414,7 @@
         <header class="app-header">
             <h1>SAO2コンパス</h1>
             <div class="header-info">
-                <span class="version-badge">Ver.1.9.1</span>
+                <span class="version-badge">Ver.2.1.1</span>
                 <span id="access-counter" class="counter-badge">👁️ --- views</span>
             </div>
         </header>
@@ -454,7 +481,7 @@
                 </div>
 
                 <div class="form-group" id="group-screen-history">
-                    <label>AT終了画面 履歴登録</label>
+                    <label>AT終了画面 履歴登録（たぶん濃厚系連動！）</label>
                     <div style="margin-bottom: 8px;">
                         <label for="input-screen-type" style="font-size:0.75rem; color:#aaa; margin-bottom:2px;">終了画面を選択</label>
                         <select id="input-screen-type">
@@ -464,9 +491,9 @@
                             <option value="木漏れ日">木漏れ日 (高設定示唆 弱)</option>
                             <option value="夏祭り">夏祭り (高設定示唆 強)</option>
                             <option value="幼少期">幼少期 (設定5以上チャンス)</option>
-                            <option value="ワイシャツ">ワイシャツ (設定2以上濃厚)</option>
-                            <option value="お風呂">お風呂 (設定3以上濃厚)</option>
-                            <option value="水着">水着 (設定4以上濃厚)</option>
+                            <option value="ワイシャツ">ワイシャツ (設定2以上濃厚！)</option>
+                            <option value="お風呂">お風呂 (設定3以上濃厚！)</option>
+                            <option value="水着">水着 (設定4以上濃厚！)</option>
                             <option value="パジャマ">パジャマ (設定6濃厚！)</option>
                         </select>
                     </div>
@@ -586,7 +613,7 @@
                         <strong id="calc-res-theend">0.0% (0 / 0)</strong>
                     </div>
                     <div class="stat-row">
-                        <span>強チェリー(normal) CZ当選率:</span>
+                        <span>強チェリー(通常) CZ当選率:</span>
                         <strong id="calc-res-sc-norm">0.0% (0 / 0)</strong>
                     </div>
                     <div class="stat-row">
@@ -617,7 +644,7 @@
 
             <!-- 設定推測タブ -->
             <section id="tab-inference" class="tab-content">
-                <h2>設定推測（簡易版）</h2>
+                <h2>設定推測（たぶん濃厚系反映！）</h2>
                 
                 <div class="result-card" id="completeness-card" style="border-color: #00bfff; margin-bottom: 14px;">
                     <h3 style="color: #00bfff; margin-bottom: 4px;">データ充実度</h3>
@@ -636,6 +663,15 @@
 
                 <div class="result-card">
                     <h3>設定推測確率（分布）</h3>
+                    <!-- 項目別フィルターチェックボックス -->
+                    <div class="inference-filter-container">
+                        <label><input type="checkbox" id="chk-factor-all" checked onchange="toggleInferenceCheckboxes('all')"> 総合（全要素）</label>
+                        <label><input type="checkbox" id="chk-factor-at" onchange="toggleInferenceCheckboxes('other')"> 初当たり・CZ</label>
+                        <label><input type="checkbox" id="chk-factor-suika" onchange="toggleInferenceCheckboxes('other')"> スイカSC</label>
+                        <label><input type="checkbox" id="chk-factor-cherry" onchange="toggleInferenceCheckboxes('other')"> 強チェCZ(合算)</label>
+                        <label><input type="checkbox" id="chk-factor-theend" onchange="toggleInferenceCheckboxes('other')"> 確定CZ(強チャ目)</label>
+                        <label><input type="checkbox" id="chk-factor-screen-deny" checked onchange="updateInferenceDistribution()"> 終了画面(たぶん濃厚系)</label>
+                    </div>
                     <div id="inference-distribution-container" style="margin-top: 10px;">
                     </div>
                 </div>
@@ -673,10 +709,10 @@
 
     <script>
         /* ==========================================
-           SAO2コンパス アプリ用データおよびスクリプト (Ver.1.9.1)
+           SAO2コンパス アプリ用データおよびスクリプト (Ver.2.1.1)
            ========================================== */
         const APP_DATA = {
-            machineName: "L ソードアート・オンライン2",
+            machineName: "ソードアート・オンライン2",
             specs: {
                 setting: [1, 2, 3, 4, 5, 6],
                 czProb: [350.0, 335.0, 315.0, 290.0, 270.0, 245.0],
@@ -684,30 +720,17 @@
                 payout: [97.8, 98.9, 101.5, 105.5, 109.5, 114.5]
             },
             screenAnalysis: {
-                screenNames: ["キリト＆シノン", "制服", "ソファー", "木漏れ日", "夏祭り", "幼少期", "ワイシャツ", "お風呂", "水着", "パジャマ"],
-                rawRates: [
-                    [0.70, 0.65, 0.60, 0.50, 0.45, 0.40],
-                    [0.20, 0.15, 0.10, 0.10, 0.10, 0.10],
-                    [0.08, 0.15, 0.18, 0.15, 0.12, 0.10],
-                    [0.02, 0.03, 0.04, 0.05, 0.06, 0.08],
-                    [0.0001, 0.01, 0.03, 0.05, 0.07, 0.10],
-                    [0.0001, 0.0001, 0.0001, 0.02, 0.05, 0.08],
-                    [0.0001, 0.01, 0.01, 0.01, 0.01, 0.01],
-                    [0.0001, 0.0001, 0.01, 0.01, 0.01, 0.01],
-                    [0.0001, 0.0001, 0.0001, 0.01, 0.01, 0.01],
-                    [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.02]
-                ],
-                ratesText: [
-                    ["70%", "65%", "60%", "50%", "45%", "40%"],
-                    ["20%", "15%", "10%", "10%", "10%", "10%"],
-                    ["8%", "15%", "18%", "15%", "12%", "10%"],
-                    ["2%", "3%", "4%", "5%", "6%", "8%"],
-                    ["-", "1%", "3%", "5%", "7%", "10%"],
-                    ["-", "-", "-", "2%", "5%", "8%"],
-                    ["-", "1%", "1%", "1%", "1%", "1%"],
-                    ["-", "-", "1%", "1%", "1%", "1%"],
-                    ["-", "-", "-", "1%", "1%", "1%"],
-                    ["-", "-", "-", "-", "-", "2%"]
+                list: [
+                    { name: "キリト＆シノン", detail: "デフォルト" },
+                    { name: "制服", detail: "奇数設定示唆" },
+                    { name: "ソファー", detail: "偶数設定示唆" },
+                    { name: "木漏れ日", detail: "高設定示唆 (弱)" },
+                    { name: "夏祭り", detail: "高設定示唆 (強)" },
+                    { name: "幼少期", detail: "設定5以上チャンス" },
+                    { name: "ワイシャツ", detail: "設定2以上濃厚！" },
+                    { name: "お風呂", detail: "設定3以上濃厚！" },
+                    { name: "水着", detail: "設定4以上濃厚！" },
+                    { name: "パジャマ", detail: "設定6濃厚！" }
                 ]
             },
             additionalAnalysis: {
@@ -752,8 +775,6 @@
 
         let screenHistory = [];
         let currentInferencePercentages = [0, 0, 0, 0, 0, 0];
-        let currentScreenPercentages = [0, 0, 0, 0, 0, 0];
-        let currentAtOnlyPercentages = [0, 0, 0, 0, 0, 0];
 
         document.addEventListener('DOMContentLoaded', () => {
             initTabs();
@@ -1064,6 +1085,23 @@
             });
         }
 
+        function toggleInferenceCheckboxes(source) {
+            const chkAll = document.getElementById('chk-factor-all');
+            const others = ['chk-factor-at', 'chk-factor-suika', 'chk-factor-cherry', 'chk-factor-theend'];
+            
+            if (source === 'all') {
+                if (chkAll.checked) {
+                    others.forEach(id => document.getElementById(id).checked = false);
+                }
+            } else if (source === 'other') {
+                const anyChecked = others.some(id => document.getElementById(id).checked);
+                if (anyChecked) {
+                    chkAll.checked = false;
+                }
+            }
+            updateInferenceDistribution();
+        }
+
         function updateResultDistributions() {
             const czFail = parseInt(document.getElementById('input-cz-fail').value) || 0;
             const itemGet = parseInt(document.getElementById('input-item-get').value) || 0;
@@ -1096,7 +1134,7 @@
                     container.innerHTML = '<p style="color: #777; text-align: center; padding: 8px;">データがありません</p>';
                 } else {
                     let counts = {};
-                    APP_DATA.screenAnalysis.screenNames.forEach(name => counts[name] = 0);
+                    APP_DATA.screenAnalysis.list.forEach(item => counts[item.name] = 0);
                     screenHistory.forEach(item => {
                         if (counts[item.screenType] !== undefined) {
                             counts[item.screenType]++;
@@ -1105,12 +1143,12 @@
 
                     let html = '';
                     const total = screenHistory.length;
-                    APP_DATA.screenAnalysis.screenNames.forEach(name => {
-                        const cnt = counts[name];
+                    APP_DATA.screenAnalysis.list.forEach(item => {
+                        const cnt = counts[item.name];
                         const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
                         html += `
                             <div class="stat-row" style="margin-bottom: 4px;">
-                                <span>${name}:</span>
+                                <span>${item.name}:</span>
                                 <strong>${cnt}回 (${pct}%)</strong>
                             </div>
                         `;
@@ -1138,15 +1176,11 @@
             document.getElementById('calc-cz-result').textContent = czActual > 0 ? `1 / ${czActual}` : '---';
             document.getElementById('calc-at-result').textContent = atActual > 0 ? `1 / ${atActual}` : '---';
 
-            // 各種実戦値に応じた解析テーブルのハイライト更新
             highlightClosestSpecs(parseFloat(czActual), parseFloat(atActual));
-            highlightRatioTable('sc-table', 'input-sc-normal-hit', 'input-sc-normal-total', ['norm', 'high']);
-            highlightRatioTable('sc-table', 'input-sc-high-hit', 'input-sc-high-total', ['norm', 'high']);
+            highlightRatioTable('sc-table', 'input-sc-normal-hit', 'input-sc-normal-total', ['norm']);
+            highlightRatioTable('sc-table', 'input-sc-high-hit', 'input-sc-high-total', ['high']);
             highlightRatioTable('theend-table', 'input-theend-hit', 'input-theend-total', ['te']);
-            highlightRatioTable('suika-table', 'input-suika-total', 'input-suika-hit', ['suika']);
-            
-            // 終了画面テーブルのハイライト更新（実戦分布に基づく）
-            highlightScreenTable();
+            highlightRatioTable('suika-table', 'input-suika-hit', 'input-suika-total', ['suika']); 
 
             updateReliability(games);
             updateInferenceDistribution();
@@ -1163,37 +1197,29 @@
             const games = parseInt(document.getElementById('input-games').value) || 0;
             const cz = parseInt(document.getElementById('input-cz').value) || 0;
             const at = parseInt(document.getElementById('input-at').value) || 0;
-            const screenCount = screenHistory.length;
 
             let score = 0;
             let warnings = [];
 
             if (games >= 3000) {
-                score += 40;
+                score += 50;
             } else {
-                score += Math.round((games / 3000) * 40);
+                score += Math.round((games / 3000) * 50);
                 warnings.push("・通常ゲーム数が少ない");
             }
 
             if (cz >= 10) {
-                score += 20;
+                score += 25;
             } else {
-                score += Math.round((cz / 10) * 20);
+                score += Math.round((cz / 10) * 25);
                 warnings.push("・CZ突入回数が少ない");
             }
 
             if (at >= 8) {
-                score += 20;
+                score += 25;
             } else {
-                score += Math.round((at / 8) * 20);
+                score += Math.round((at / 8) * 25);
                 warnings.push("・AT初当たり回数が少ない");
-            }
-
-            if (screenCount >= 5) {
-                score += 20;
-            } else {
-                score += Math.round((screenCount / 5) * 20);
-                warnings.push("・終了画面登録が少ない");
             }
 
             if (score > 100) score = 100;
@@ -1263,9 +1289,17 @@
             msgEl.textContent = msg;
         }
 
+        // ▼ たぶん濃厚系を考慮した設定推測ロジック！
         function updateInferenceDistribution() {
             const container = document.getElementById('inference-distribution-container');
             if (!container) return;
+
+            const chkAll = document.getElementById('chk-factor-all') ? document.getElementById('chk-factor-all').checked : false;
+            const useAt = chkAll || (document.getElementById('chk-factor-at') && document.getElementById('chk-factor-at').checked);
+            const useSuika = chkAll || (document.getElementById('chk-factor-suika') && document.getElementById('chk-factor-suika').checked);
+            const useCherry = chkAll || (document.getElementById('chk-factor-cherry') && document.getElementById('chk-factor-cherry').checked);
+            const useTheEnd = chkAll || (document.getElementById('chk-factor-theend') && document.getElementById('chk-factor-theend').checked);
+            const useScreenDeny = document.getElementById('chk-factor-screen-deny') ? document.getElementById('chk-factor-screen-deny').checked : false;
 
             const games = parseInt(document.getElementById('input-games').value) || 0;
             const cz = parseInt(document.getElementById('input-cz').value) || 0;
@@ -1274,7 +1308,7 @@
             const specs = APP_DATA.specs;
 
             const hasData = (games > 0 || cz > 0 || at > 0 || screenHistory.length > 0);
-            if (!hasData) {
+            if (!hasData || (!useAt && !useSuika && !useCherry && !useTheEnd && !useScreenDeny)) {
                 currentInferencePercentages = [0, 0, 0, 0, 0, 0];
                 let html = '';
                 for (let i = 0; i < 6; i++) {
@@ -1295,58 +1329,82 @@
 
             let likelihoods = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]; 
 
-            let is6Confirmed = false;
-            let is5UpConfirmed = false;
-            let is4UpConfirmed = false;
-            let is3UpConfirmed = false;
-            let is2UpConfirmed = false;
+            if (useScreenDeny && screenHistory.length > 0) {
+                let minSetting = 1;
+                screenHistory.forEach(item => {
+                    if (item.screenType === "パジャマ") minSetting = Math.max(minSetting, 6);
+                    if (item.screenType === "水着") minSetting = Math.max(minSetting, 4);
+                    if (item.screenType === "お風呂") minSetting = Math.max(minSetting, 3);
+                    if (item.screenType === "ワイシャツ") minSetting = Math.max(minSetting, 2);
+                });
 
-            screenHistory.forEach(item => {
-                if (item.screenType === "パジャマ") is6Confirmed = true;
-                if (item.screenType === "幼少期") is5UpConfirmed = true;
-                if (item.screenType === "水着") is4UpConfirmed = true;
-                if (item.screenType === "お風呂") is3UpConfirmed = true;
-                if (item.screenType === "ワイシャツ") is2UpConfirmed = true;
-            });
-
-            if (is6Confirmed) {
-                likelihoods = [0, 0, 0, 0, 0, 1];
-            } else if (is5UpConfirmed) {
-                likelihoods = [0, 0, 0, 0, 1, 1];
-            } else if (is4UpConfirmed) {
-                likelihoods = [0, 0, 0, 1, 1, 1];
-            } else if (is3UpConfirmed) {
-                likelihoods = [0, 0, 1, 1, 1, 1];
-            } else if (is2UpConfirmed) {
-                likelihoods = [0, 1, 1, 1, 1, 1];
-            } else {
-                if (games > 100 && (cz > 0 || at > 0)) {
-                    const userCzProb = games / (cz || 1);
-                    const userAtProb = games / (at || 1);
-
-                    for (let i = 0; i < 6; i++) {
-                        const czDiffRatio = Math.abs(specs.czProb[i] - userCzProb) / specs.czProb[i];
-                        const atDiffRatio = Math.abs(specs.atProb[i] - userAtProb) / specs.atProb[i];
-                        
-                        likelihoods[i] *= Math.max(0.01, Math.exp(-czDiffRatio * 2) * Math.exp(-atDiffRatio * 3));
+                for (let i = 0; i < 6; i++) {
+                    if ((i + 1) < minSetting) {
+                        likelihoods[i] = 0;
                     }
                 }
+            }
 
-                if (screenHistory.length > 0) {
-                    screenHistory.forEach(item => {
-                        const screenIdx = APP_DATA.screenAnalysis.screenNames.indexOf(item.screenType);
-                        if (screenIdx !== -1) {
-                            const rawRates = APP_DATA.screenAnalysis.rawRates[screenIdx];
-                            for (let i = 0; i < 6; i++) {
-                                likelihoods[i] *= Math.max(0.0001, rawRates[i]);
-                            }
-                        }
-                    });
+            // 初当たり・CZの計算
+            if (useAt && games > 100 && (cz > 0 || at > 0)) {
+                const userCzProb = games / (cz || 1);
+                const userAtProb = games / (at || 1);
+
+                for (let i = 0; i < 6; i++) {
+                    if (likelihoods[i] === 0) continue;
+                    const czDiffRatio = Math.abs(specs.czProb[i] - userCzProb) / specs.czProb[i];
+                    const atDiffRatio = Math.abs(specs.atProb[i] - userAtProb) / specs.atProb[i];
+                    
+                    likelihoods[i] *= Math.max(0.01, Math.exp(-czDiffRatio * 2) * Math.exp(-atDiffRatio * 3));
+                }
+            }
+
+            // スイカSCの計算
+            const suikaHit = parseInt(document.getElementById('input-suika-hit').value) || 0;
+            const suikaTot = parseInt(document.getElementById('input-suika-total').value) || 0;
+            if (useSuika && suikaTot > 0) {
+                const userRate = suikaHit / suikaTot;
+                const specVals = APP_DATA.additionalAnalysis.suikaSC.rawVals;
+                for(let i = 0; i < 6; i++) {
+                    if (likelihoods[i] === 0) continue;
+                    const diff = Math.abs(specVals[i] - userRate);
+                    likelihoods[i] *= Math.max(0.1, Math.exp(-diff * 5));
+                }
+            }
+
+            // 強チェリー合算の計算
+            const scNormHit = parseInt(document.getElementById('input-sc-normal-hit').value) || 0;
+            const scNormTot = parseInt(document.getElementById('input-sc-normal-total').value) || 0;
+            const scHighHit = parseInt(document.getElementById('input-sc-high-hit').value) || 0;
+            const scHighTot = parseInt(document.getElementById('input-sc-high-total').value) || 0;
+            const cherryHit = scNormHit + scHighHit;
+            const cherryTot = scNormTot + scHighTot;
+            if (useCherry && cherryTot > 0) {
+                const userRate = cherryHit / cherryTot;
+                const specNorm = APP_DATA.additionalAnalysis.strongCherry.rawVals.map(v => v[0]);
+                const specHigh = APP_DATA.additionalAnalysis.strongCherry.rawVals.map(v => v[1]);
+                for(let i = 0; i < 6; i++) {
+                    if (likelihoods[i] === 0) continue;
+                    const expectedRate = ((specNorm[i] * scNormTot) + (specHigh[i] * scHighTot)) / cherryTot;
+                    const diff = Math.abs(expectedRate - userRate);
+                    likelihoods[i] *= Math.max(0.1, Math.exp(-diff * 5));
+                }
+            }
+
+            // 確定CZ(強チャ目)の計算
+            const theEndHit = parseInt(document.getElementById('input-theend-hit').value) || 0;
+            const theEndTot = parseInt(document.getElementById('input-theend-total').value) || 0;
+            if (useTheEnd && theEndTot > 0) {
+                const userRate = theEndHit / theEndTot;
+                const specVals = APP_DATA.additionalAnalysis.theEnd.rawVals;
+                for(let i = 0; i < 6; i++) {
+                    if (likelihoods[i] === 0) continue;
+                    const diff = Math.abs(specVals[i] - userRate);
+                    likelihoods[i] *= Math.max(0.1, Math.exp(-diff * 20));
                 }
             }
 
             calcAtOnlyPercentages(games, cz, at);
-            calcScreenPercentages();
 
             const totalLikelihood = likelihoods.reduce((a, b) => a + b, 0);
             let percentages = likelihoods.map(l => totalLikelihood > 0 ? Math.round((l / totalLikelihood) * 100) : 0);
@@ -1392,23 +1450,6 @@
             window.atOnlyPct = l.map(val => total > 0 ? Math.round((val / total) * 100) : 0);
         }
 
-        function calcScreenPercentages() {
-            let l = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
-            if (screenHistory.length > 0) {
-                screenHistory.forEach(item => {
-                    const screenIdx = APP_DATA.screenAnalysis.screenNames.indexOf(item.screenType);
-                    if (screenIdx !== -1) {
-                        const rawRates = APP_DATA.screenAnalysis.rawRates[screenIdx];
-                        for (let i = 0; i < 6; i++) {
-                            l[i] *= Math.max(0.0001, rawRates[i]);
-                        }
-                    }
-                });
-            }
-            const total = l.reduce((a, b) => a + b, 0);
-            window.screenOnlyPct = l.map(val => total > 0 ? Math.round((val / total) * 100) : 0);
-        }
-
         function generateReportText() {
             const now = new Date();
             const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
@@ -1430,7 +1471,6 @@
             const mostLikely = maxP > 0 ? `設定${maxIdx + 1}` : '---';
 
             const aPct = window.atOnlyPct || [0,0,0,0,0,0];
-            const sPct = window.screenOnlyPct || [0,0,0,0,0,0];
 
             let text = `━━━━━━━━━━━━━━\n`;
             text += `🧭 SAO2コンパス\n`;
@@ -1455,13 +1495,7 @@
             }
             text += `\n`;
 
-            text += `■ 終了画面\n`;
-            for (let i = 0; i < 6; i++) {
-                text += `設定${i+1}：${sPct[i]}%\n`;
-            }
-            text += `\n`;
-
-            text += `■ 総合推測\n`;
+            text += `■ 総合推測 (たぶん濃厚系反映版)\n`;
             for (let i = 0; i < 6; i++) {
                 text += `設定${i+1}：${p[i]}%\n`;
             }
@@ -1483,7 +1517,7 @@
         function renderAnalysisData() {
             const container = document.getElementById('analysis-container');
             const specs = APP_DATA.specs;
-            const screenData = APP_DATA.screenAnalysis;
+            const screenList = APP_DATA.screenAnalysis.list;
             const addData = APP_DATA.additionalAnalysis;
 
             let html = `
@@ -1597,33 +1631,21 @@
                 </div>
 
                 <div class="result-card">
-                    <h3>AT終了画面 出現率（全10種類）</h3>
-                    <table class="spec-table analysis-table" style="font-size: 0.75rem;" data-table-id="sao-screen">
+                    <h3>AT終了画面 設定示唆法則一覧</h3>
+                    <table class="spec-table analysis-table">
                         <thead>
                             <tr>
-                                <th>終了画面</th>
-                                <th>1</th>
-                                <th>2</th>
-                                <th>3</th>
-                                <th>4</th>
-                                <th>5</th>
-                                <th>6</th>
+                                <th style="width: 40%;">終了画面</th>
+                                <th style="width: 60%;">設定示唆内容</th>
                             </tr>
                         </thead>
                         <tbody>
             `;
-            screenData.screenNames.forEach((name, idx) => {
-                const r = screenData.ratesText[idx];
-                const rawR = screenData.rawRates[idx];
+            screenList.forEach(item => {
                 html += `
                     <tr>
-                        <td style="text-align: left; padding-left: 4px;"><strong>${name}</strong></td>
-                        <td data-screen-row="${idx}" data-col="1" data-val="${rawR[0]}">${r[0]}</td>
-                        <td data-screen-row="${idx}" data-col="2" data-val="${rawR[1]}">${r[1]}</td>
-                        <td data-screen-row="${idx}" data-col="3" data-val="${rawR[2]}">${r[2]}</td>
-                        <td data-screen-row="${idx}" data-col="4" data-val="${rawR[3]}">${r[3]}</td>
-                        <td data-screen-row="${idx}" data-col="5" data-val="${rawR[4]}">${r[4]}</td>
-                        <td data-screen-row="${idx}" data-col="6" data-val="${rawR[5]}">${r[5]}</td>
+                        <td style="text-align: left; padding-left: 8px;"><strong>${item.name}</strong></td>
+                        <td style="text-align: left; padding-left: 8px; color: #00bfff;">${item.detail}</td>
                     </tr>
                 `;
             });
@@ -1684,7 +1706,6 @@
             }
         }
 
-        // 任意の子役・レア役カウンター用：実戦確率に一番近い設定のセルだけを1つだけハイライトする関数
         function highlightRatioTable(tableId, hitInputId, totalInputId, dataCols) {
             const table = document.querySelector(`[data-table-id="${tableId}"]`);
             if (!table) return;
@@ -1725,49 +1746,6 @@
 
                 if (closestTd) {
                     closestTd.classList.add('highlight-spec');
-                }
-            });
-        }
-
-        // AT終了画面テーブルのハイライト関数：登録された終了画面の傾向に合わせて該当セルをハイライト
-        function highlightScreenTable() {
-            const table = document.querySelector('[data-table-id="sao-screen"]');
-            if (!table) return;
-
-            const allTds = table.querySelectorAll('td[data-screen-row]');
-            allTds.forEach(td => td.classList.remove('highlight-spec'));
-
-            if (screenHistory.length === 0) return;
-
-            // 終了画面の履歴の中で、実戦で引いた回数が多い画面の行、あるいは高設定示唆画面が引かれた場合に該当セルを光らせる
-            let screenCounts = {};
-            APP_DATA.screenAnalysis.screenNames.forEach(name => screenCounts[name] = 0);
-            screenHistory.forEach(item => {
-                if (screenCounts[item.screenType] !== undefined) {
-                    screenCounts[item.screenType]++;
-                }
-            });
-
-            // 実際に引かれた画面の行について、解析上で確率が一番高い設定（または今回の推測で有力な設定）のセルをハイライトする
-            APP_DATA.screenAnalysis.screenNames.forEach((name, sIdx) => {
-                if (screenCounts[name] > 0) {
-                    const rawRates = APP_DATA.screenAnalysis.rawRates[sIdx];
-                    // この画面において一番出現率が高い設定（複数ある場合は最大値を持つもの）を特定
-                    let maxRate = -1;
-                    let maxCol = -1;
-                    rawRates.forEach((rate, settingIdx) => {
-                        if (rate > maxRate) {
-                            maxRate = rate;
-                            maxCol = settingIdx + 1; // 設定1〜6
-                        }
-                    });
-
-                    if (maxCol !== -1) {
-                        const targetTd = table.querySelector(`td[data-screen-row="${sIdx}"][data-col="${maxCol}"]`);
-                        if (targetTd) {
-                            targetTd.classList.add('highlight-spec');
-                        }
-                    }
                 }
             });
         }
