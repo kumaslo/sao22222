@@ -387,7 +387,7 @@
         <header class="app-header">
             <h1>SAO2コンパス</h1>
             <div class="header-info">
-                <span class="version-badge">Ver.1.8.0</span>
+                <span class="version-badge">Ver.1.9.1</span>
                 <span id="access-counter" class="counter-badge">👁️ --- views</span>
             </div>
         </header>
@@ -586,7 +586,7 @@
                         <strong id="calc-res-theend">0.0% (0 / 0)</strong>
                     </div>
                     <div class="stat-row">
-                        <span>強チェリー(通常) CZ当選率:</span>
+                        <span>強チェリー(normal) CZ当選率:</span>
                         <strong id="calc-res-sc-norm">0.0% (0 / 0)</strong>
                     </div>
                     <div class="stat-row">
@@ -624,7 +624,7 @@
                     <div id="completeness-stars" style="font-size: 1.3rem; letter-spacing: 2px; color: #00ffff; margin-bottom: 2px;">★☆☆☆☆</div>
                     <div id="completeness-score" style="font-size: 0.9rem; font-weight: bold; color: #fff; margin-bottom: 4px;">0点</div>
                     <div id="completeness-message" style="font-size: 0.85rem; color: #ccc; margin-bottom: 8px;">データ不足</div>
-                    <div id="completeness-warnings" style="font-size: 0.8rem; color: #00bfff; border-top: 1px solid #333; padding-top: 6px;"></div>
+                    <div id="completeness-warnings" style="font-size: 0.80rem; color: #00bfff; border-top: 1px solid #333; padding-top: 6px;"></div>
                 </div>
 
                 <div class="result-card" id="reliability-card" style="border-color: #00bfff;">
@@ -673,7 +673,7 @@
 
     <script>
         /* ==========================================
-           SAO2コンパス アプリ用データおよびスクリプト (Ver.1.8.0)
+           SAO2コンパス アプリ用データおよびスクリプト (Ver.1.9.1)
            ========================================== */
         const APP_DATA = {
             machineName: "L ソードアート・オンライン2",
@@ -1138,8 +1138,16 @@
             document.getElementById('calc-cz-result').textContent = czActual > 0 ? `1 / ${czActual}` : '---';
             document.getElementById('calc-at-result').textContent = atActual > 0 ? `1 / ${atActual}` : '---';
 
+            // 各種実戦値に応じた解析テーブルのハイライト更新
             highlightClosestSpecs(parseFloat(czActual), parseFloat(atActual));
+            highlightRatioTable('sc-table', 'input-sc-normal-hit', 'input-sc-normal-total', ['norm', 'high']);
+            highlightRatioTable('sc-table', 'input-sc-high-hit', 'input-sc-high-total', ['norm', 'high']);
+            highlightRatioTable('theend-table', 'input-theend-hit', 'input-theend-total', ['te']);
+            highlightRatioTable('suika-table', 'input-suika-total', 'input-suika-hit', ['suika']);
             
+            // 終了画面テーブルのハイライト更新（実戦分布に基づく）
+            highlightScreenTable();
+
             updateReliability(games);
             updateInferenceDistribution();
             updateResultDistributions();
@@ -1453,7 +1461,7 @@
             }
             text += `\n`;
 
-            text += `【総合推測】\n`;
+            text += `■ 総合推測\n`;
             for (let i = 0; i < 6; i++) {
                 text += `設定${i+1}：${p[i]}%\n`;
             }
@@ -1610,12 +1618,12 @@
                 html += `
                     <tr>
                         <td style="text-align: left; padding-left: 4px;"><strong>${name}</strong></td>
-                        <td data-col="1" data-val="${rawR[0]}">${r[0]}</td>
-                        <td data-col="2" data-val="${rawR[1]}">${r[1]}</td>
-                        <td data-col="3" data-val="${rawR[2]}">${r[2]}</td>
-                        <td data-col="4" data-val="${rawR[3]}">${r[3]}</td>
-                        <td data-col="5" data-val="${rawR[4]}">${r[4]}</td>
-                        <td data-col="6" data-val="${rawR[5]}">${r[5]}</td>
+                        <td data-screen-row="${idx}" data-col="1" data-val="${rawR[0]}">${r[0]}</td>
+                        <td data-screen-row="${idx}" data-col="2" data-val="${rawR[1]}">${r[1]}</td>
+                        <td data-screen-row="${idx}" data-col="3" data-val="${rawR[2]}">${r[2]}</td>
+                        <td data-screen-row="${idx}" data-col="4" data-val="${rawR[3]}">${r[3]}</td>
+                        <td data-screen-row="${idx}" data-col="5" data-val="${rawR[4]}">${r[4]}</td>
+                        <td data-screen-row="${idx}" data-col="6" data-val="${rawR[5]}">${r[5]}</td>
                     </tr>
                 `;
             });
@@ -1674,6 +1682,94 @@
                     if (closestAtRow) closestAtRow.classList.add('highlight-spec');
                 }
             }
+        }
+
+        // 任意の子役・レア役カウンター用：実戦確率に一番近い設定のセルだけを1つだけハイライトする関数
+        function highlightRatioTable(tableId, hitInputId, totalInputId, dataCols) {
+            const table = document.querySelector(`[data-table-id="${tableId}"]`);
+            if (!table) return;
+
+            const hit = parseInt(document.getElementById(hitInputId).value) || 0;
+            const total = parseInt(document.getElementById(totalInputId).value) || 0;
+            const hasData = (total > 0);
+
+            const trs = table.querySelectorAll('tbody tr');
+            
+            trs.forEach(tr => {
+                dataCols.forEach(col => {
+                    const td = tr.querySelector(`[data-col="${col}"]`);
+                    if (td) td.classList.remove('highlight-spec');
+                });
+            });
+
+            if (!hasData) return;
+
+            const userRate = hit / total;
+
+            dataCols.forEach(col => {
+                let closestTd = null;
+                let minDiff = Infinity;
+
+                trs.forEach(tr => {
+                    const td = tr.querySelector(`[data-col="${col}"]`);
+                    if (!td) return;
+                    const specVal = parseFloat(td.getAttribute('data-val'));
+                    if (isNaN(specVal)) return;
+
+                    const diff = Math.abs(specVal - userRate);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestTd = td;
+                    }
+                });
+
+                if (closestTd) {
+                    closestTd.classList.add('highlight-spec');
+                }
+            });
+        }
+
+        // AT終了画面テーブルのハイライト関数：登録された終了画面の傾向に合わせて該当セルをハイライト
+        function highlightScreenTable() {
+            const table = document.querySelector('[data-table-id="sao-screen"]');
+            if (!table) return;
+
+            const allTds = table.querySelectorAll('td[data-screen-row]');
+            allTds.forEach(td => td.classList.remove('highlight-spec'));
+
+            if (screenHistory.length === 0) return;
+
+            // 終了画面の履歴の中で、実戦で引いた回数が多い画面の行、あるいは高設定示唆画面が引かれた場合に該当セルを光らせる
+            let screenCounts = {};
+            APP_DATA.screenAnalysis.screenNames.forEach(name => screenCounts[name] = 0);
+            screenHistory.forEach(item => {
+                if (screenCounts[item.screenType] !== undefined) {
+                    screenCounts[item.screenType]++;
+                }
+            });
+
+            // 実際に引かれた画面の行について、解析上で確率が一番高い設定（または今回の推測で有力な設定）のセルをハイライトする
+            APP_DATA.screenAnalysis.screenNames.forEach((name, sIdx) => {
+                if (screenCounts[name] > 0) {
+                    const rawRates = APP_DATA.screenAnalysis.rawRates[sIdx];
+                    // この画面において一番出現率が高い設定（複数ある場合は最大値を持つもの）を特定
+                    let maxRate = -1;
+                    let maxCol = -1;
+                    rawRates.forEach((rate, settingIdx) => {
+                        if (rate > maxRate) {
+                            maxRate = rate;
+                            maxCol = settingIdx + 1; // 設定1〜6
+                        }
+                    });
+
+                    if (maxCol !== -1) {
+                        const targetTd = table.querySelector(`td[data-screen-row="${sIdx}"][data-col="${maxCol}"]`);
+                        if (targetTd) {
+                            targetTd.classList.add('highlight-spec');
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>
