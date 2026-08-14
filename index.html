@@ -414,7 +414,7 @@
         <header class="app-header">
             <h1>SAO2コンパス</h1>
             <div class="header-info">
-                <span class="version-badge">Ver.2.1.1</span>
+                <span class="version-badge">Ver.2.1.2</span>
                 <span id="access-counter" class="counter-badge">👁️ --- views</span>
             </div>
         </header>
@@ -685,7 +685,7 @@
                     <h3>📋 実戦レポート生成</h3>
                     <p style="font-size: 0.8rem; color: #ccc; margin-bottom: 8px;">現在の実戦結果と設定推測結果をテキスト形式でまとめて出力します。</p>
                     
-                    <textarea id="report-text-output" readonly style="width: 100%; height: 180px; background: #0a0a0a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.78rem; padding: 8px; font-family: monospace; margin-bottom: 8px; resize: none;"></textarea>
+                    <textarea id="report-text-output" readonly style="width: 100%; height: 210px; background: #0a0a0a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.78rem; padding: 8px; font-family: monospace; margin-bottom: 8px; resize: none;"></textarea>
                     
                     <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <button type="button" id="btn-copy-report" class="btn-primary" style="margin-top:0;">📋 テキストをコピー</button>
@@ -709,7 +709,7 @@
 
     <script>
         /* ==========================================
-           SAO2コンパス アプリ用データおよびスクリプト (Ver.2.1.1)
+           SAO2コンパス アプリ用データおよびスクリプト (Ver.2.1.2)
            ========================================== */
         const APP_DATA = {
             machineName: "ソードアート・オンライン2",
@@ -1289,7 +1289,6 @@
             msgEl.textContent = msg;
         }
 
-        // ▼ たぶん濃厚系を考慮した設定推測ロジック！
         function updateInferenceDistribution() {
             const container = document.getElementById('inference-distribution-container');
             if (!container) return;
@@ -1450,6 +1449,7 @@
             window.atOnlyPct = l.map(val => total > 0 ? Math.round((val / total) * 100) : 0);
         }
 
+        // ▼ 確率がある設定要素をもりもり盛り込んだ豪華なレポート生成ロジック！
         function generateReportText() {
             const now = new Date();
             const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
@@ -1463,6 +1463,11 @@
             const czFail = document.getElementById('input-cz-fail').value || '0';
             const itemGet = document.getElementById('input-item-get').value || '0';
             const itemRateStr = document.getElementById('calc-res-item-rate').textContent;
+            
+            // 確率が出ている重要要素
+            const suikaRateStr = document.getElementById('calc-res-suika').textContent;
+            const scNormRateStr = document.getElementById('calc-res-sc-norm').textContent;
+            const scHighRateStr = document.getElementById('calc-res-sc-high').textContent;
             const theEndRateStr = document.getElementById('calc-res-theend').textContent;
 
             const p = currentInferencePercentages;
@@ -1470,38 +1475,32 @@
             const maxIdx = p.indexOf(maxP);
             const mostLikely = maxP > 0 ? `設定${maxIdx + 1}` : '---';
 
-            const aPct = window.atOnlyPct || [0,0,0,0,0,0];
-
             let text = `━━━━━━━━━━━━━━\n`;
-            text += `🧭 SAO2コンパス\n`;
-            text += `実戦レポート\n`;
-            text += `${dateStr}\n`;
+            text += `🧭 SAO2コンパス 実戦レポート\n`;
+            text += `日付：${dateStr}\n`;
             text += `━━━━━━━━━━━━━━\n\n`;
 
-            text += `【実戦データ】\n`;
-            text += `通常ゲーム数：${games}G\n`;
-            text += `CZ突入回数：${cz}回 (${czProb})\n`;
-            text += `AT初当たり回数：${at}回 (${atProb})\n\n`;
+            text += `【基本データ】\n`;
+            text += `・通常ゲーム数：${games}G\n`;
+            text += `・CZ突入回数：${cz}回 (${czProb})\n`;
+            text += `・AT初当り回数：${at}回 (${atProb})\n\n`;
 
-            text += `【小役・独自集計】\n`;
-            text += `CZ失敗数：${czFail}回\n`;
-            text += `アイテム獲得：${itemGet}回 (${itemRateStr})\n`;
-            text += `確定CZ(強チャンス目)：${theEndRateStr}\n\n`;
+            text += `【確率のある主要設定要素】\n`;
+            text += `・スイカからのSC当選率：${suikaRateStr}\n`;
+            text += `・強チェリー(通常) CZ：${scNormRateStr}\n`;
+            text += `・強チェリー(高確) CZ：${scHighRateStr}\n`;
+            text += `・確定CZ(強チャ目)：${theEndRateStr}\n\n`;
 
-            text += `【設定推測】\n\n`;
-            text += `■ 初当たり・CZ確率\n`;
+            text += `【その他・メモ要素】\n`;
+            text += `・CZ失敗時アイテム獲得率：${itemRateStr}\n`;
+            text += `・AT終了画面 登録数：${screenHistory.length}件\n\n`;
+
+            text += `【設定推測結果 (たぶん濃厚系反映)】\n`;
             for (let i = 0; i < 6; i++) {
-                text += `設定${i+1}：${aPct[i]}%\n`;
+                text += `・設定${i+1}：${p[i]}%\n`;
             }
             text += `\n`;
-
-            text += `■ 総合推測 (たぶん濃厚系反映版)\n`;
-            for (let i = 0; i < 6; i++) {
-                text += `設定${i+1}：${p[i]}%\n`;
-            }
-            text += `\n`;
-            text += `最有力：${mostLikely}\n\n`;
-
+            text += `★ 最有力候補：${mostLikely}\n`;
             text += `━━━━━━━━━━━━━━`;
 
             return text;
